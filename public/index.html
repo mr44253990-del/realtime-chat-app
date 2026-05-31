@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Communication App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        header h1 {
+            margin-bottom: 10px;
+        }
+        
+        main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        .panel h2 {
+            margin-bottom: 20px;
+            color: #444;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+        }
+        
+        .messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+        
+        .message.own {
+            background-color: #667eea;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message.other {
+            background-color: #e1e1e1;
+            margin-right: auto;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .status-speaking {
+            background-color: #00b894;
+        }
+        
+        .status-listening {
+            background-color: #667eea;
+        }
+        
+        .status-muted {
+            background-color: #ff7675;
+        }
+        
+        .mic-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .user-list {
+            margin-top: 20px;
+        }
+        
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .user-item:last-child {
+            border-bottom: none;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .user-status {
+            margin-left: auto;
+            font-size: 14px;
+        }
+        
+        .emoji-picker {
+            position: relative;
+        }
+        
+        .emoji-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .emoji-menu {
+            position: absolute;
+            bottom: 40px;
+            left: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .emoji-menu button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .emoji-menu button:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .emoji-menu.hidden {
+            display: none;
+        }
+        
+        .room-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Real-time Communication App</h1>
+            <p>Connect, communicate, collaborate</p>
+        </header>
+        
+        <main>
+            <!-- Left Panel: Room Controls -->
+            <div class="panel">
+                <h2>Room Controls</h2>
+                
+                <div id="room-creation-section">
+                    <div class="form-group">
+                        <label for="room-id">Room ID:</label>
+                        <input type="text" id="room-id" placeholder="Enter room ID" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="room-password">Password (optional):</label>
+                        <input type="password" id="room-password" placeholder="Enter password" />
+                    </div>
+                    
+                    <button class="btn" id="create-room-btn">Create Room</button>
+                </div>
+                
+                <div id="room-join-section" class="hidden">
+                    <div class="form-group">
+                        <label for="join-room-id">Room ID to Join:</label>
+                        <input type="text" id="join-room-id" placeholder="Enter room ID" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="join-room-password">Password:</label>
+                        <input type="password" id="join-room-password" placeholder="Enter password" />
+                    </div>
+                    
+                    <button class="btn" id="join-room-btn">Join Room</button>
+                </div>
+                
+                <div id="room-info-section" class="hidden">
+                    <div class="room-info">
+                        <h3>Current Room: <span id="current-room-name"></span></h3>
+                        <p>Users online: <span id="user-count">0</span></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="user-name">Your Name:</label>
+                        <input type="text" id="user-name" placeholder="Enter your name" />
+                    </div>
+                    
+                    <div class="mic-controls">
+                        <button class="btn" id="mic-request-btn">Request Microphone</button>
+                        <button class="btn btn-danger" id="leave-room-btn">Leave Room</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Chat Interface -->
+            <div class="panel">
+                <h2>Communication</h2>
+                
+                <div id="chat-section" class="hidden">
+                    <div id="messages" class="messages"></div>
+                    
+                    <div class="input-area">
+                        <div class="emoji-picker">
+                            <button class="emoji-button" id="emoji-btn">😊</button>
+                            <div class="emoji-menu hidden" id="emoji-menu">
+                                <!-- Common emojis -->
+                                <button title="Smile">😊</button>
+                                <button title="Laugh">😂</button>
+                                <button title="Heart">❤️</button>
+                                <button title="Thumbs Up">👍</button>
+                                <button title="Clap">👏</button>
+                                <button title="Celebrate">🎉</button>
+                                <button title="Surprised">😮</button>
+                                <button title="Cool">😎</button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <textarea id="chat-input" placeholder="Type a message..." rows="3"></textarea>
+                        </div>
+                        
+                        <div class="mic-controls">
+                            <button class="btn" id="send-message-btn">Send Message</button>
+                            <button class="btn btn-success" id="toggle-speaking-btn">Start Speaking</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="user-list-section">
+                    <h3>Participants</h3>
+                    <div id="user-list" class="user-list"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // DOM Elements
+        const socket = io();
+        
+        // Room creation elements
+        const roomCreationSection = document.getElementById('room-creation-section');
+        const roomJoinSection = document.getElementById('room-join-section');
+        const roomInfoSection = document.getElementById('room-info-section');
+        const createRoomBtn = document.getElementById('create-room-btn');
+        const joinRoomBtn = document.getElementById('join-room-btn');
+        const leaveRoomBtn = document.getElementById('leave-room-btn');
+        
+        // Input elements
+        const roomIdInput = document.getElementById('room-id');
+        const roomPasswordInput = document.getElementById('room-password');
+        const joinRoomIdInput = document.getElementById('join-room-id');
+        const joinRoomPasswordInput = document.getElementById('join-room-password');
+        const userNameInput = document.getElementById('user-name');
+        
+        // Chat elements
+        const chatSection = document.getElementById('chat-section');
+        const messagesDiv = document.getElementById('messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendMessageBtn = document.getElementById('send-message-btn');
+        const emojiBtn = document.getElementById('emoji-btn');
+        const emojiMenu = document.getElementById('emoji-menu');
+        const micRequestBtn = document.getElementById('mic-request-btn');
+        const toggleSpeakingBtn = document.getElementById('toggle-speaking-btn');
+        
+        // Room info elements
+        const currentRoomName = document.getElementById('current-room-name');
+        const userCount = document.getElementById('user-count');
+        
+        // User list elements
+        const userListSection = document.getElementById('user-list-section');
+        const userListDiv = document.getElementById('user-list');
+        
+        // Alert container (we'll create this dynamically)
+        let alertContainer = null;
+        
+        // State variables
+        let currentRoomId = null;
+        let currentUserName = '';
+        let isSpeaking = false;
+        let micGranted = false;
+        
+        // Initialize
+        function init() {
+            // Create alert container
+            alertContainer = document.createElement('div');
+            alertContainer.id = 'alert-container';
+            document.querySelector('.container').insertBefore(alertContainer, document.querySelector('main'));
+            
+            // Set up event listeners
+            setupEventListeners();
+        }
+        
+        function setupEventListeners() {
+            // Room creation
+            createRoomBtn.addEventListener('click', createRoom);
+            joinRoomBtn.addEventListener('click', joinRoom);
+            leaveRoomBtn.addEventListener('click', leaveRoom);
+            
+            // Chat functionality
+            sendMessageBtn.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+            
+            // Emoji picker
+            emojiBtn.addEventListener('click', toggleEmojiMenu);
+            
+            // Emoji selection
+            emojiMenu.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const emoji = e.target.textContent;
+                    chatInput.value += emoji;
+                    chatInput.focus();
+                    emojiMenu.classList.add('hidden');
+                });
+            });
+            
+            // Mic controls
+            micRequestBtn.addEventListener('click', requestMicPermission);
+            toggleSpeakingBtn.addEventListener('click', toggleSpeaking);
+        }
+        
+        // Room functions
+        function createRoom() {
+            const roomId = roomIdInput.value.trim();
+            const password = roomPasswordInput.value.trim();
+            const userName = userNameInput.value.trim() || 'Anonymous';
+            
+            if (!roomId) {
+                showAlert('Please enter a room ID', 'error');
+                return;
+            }
+            
+            socket.emit('create-room', { roomId, password }, (response) => {
+                if (response.success) {
+                    currentRoomId = roomId;
+                    currentUserName = userName;
+                    showAlert('Room created successfully!', 'success');
+                    joinRoomInternal({ roomId, password });
+                } else {
+                    showAlert(response.message || 'Failed to create room', 'error');
+                }
+            });
+        }
+        
+        function joinRoom() {
+            const roomId = joinRoomIdInput.value.trim();
+            const password = joinRoomPasswordInput.value.trim();
+            const userName = userNameInput.value.trim() || 'Anonymous';
+            
+            if (!roomId) {
+                showAlert('Please enter a room ID', 'error');
+                return;
+            }
+            
+            socket.emit('join-room', { roomId, password }, (response) => {
+                if (response.success) {
+                    currentRoomId = roomId;
+                    currentUserName = userName;
+                    showAlert('Joined room successfully!', 'success');
+                    joinRoomInternal({ roomId, password });
+                } else {
+                    showAlert(response.message || 'Failed to join room', 'error');
+                }
+            });
+        }
+        
+        function joinRoomInternal({ roomId, password }) {
+            // Hide join/creation sections, show room info and chat
+            roomCreationSection.classList.add('hidden');
+            roomJoinSection.classList.add('hidden');
+            roomInfoSection.classList.remove('hidden');
+            chatSection.classList.remove('hidden');
+            userListSection.classList.remove('hidden');
+            
+            // Update UI
+            currentRoomName.textContent = roomId;
+            userNameInput.value = '';
+            roomIdInput.value = '';
+            roomPasswordInput.value = '';
+            joinRoomIdInput.value = '';
+            joinRoomPasswordInput.value = '';
+        }
+        
+        function leaveRoom() {
+            if (!currentRoomId) return;
+            
+            socket.emit('leave-room', { roomId: currentRoomId });
+            
+            // Reset UI
+            roomCreationSection.classList.remove('hidden');
+            roomJoinSection.classList.remove('hidden');
+            roomInfoSection.classList.add('hidden');
+            chatSection.classList.add('hidden');
+            userListSection.classList.add('hidden');
+            
+            // Clear chat
+            messagesDiv.innerHTML = '';
+            
+            // Reset state
+            currentRoomId = null;
+            currentUserName = '';
+            isSpeaking = false;
+            micGranted = false;
+            toggleSpeakingBtn.textContent = 'Start Speaking';
+            toggleSpeakingBtn.classList.remove('btn-success');
+            toggleSpeakingBtn.classList.add('btn');
+            
+            showAlert('Left the room', 'info');
+        }
+        
+        // Chat functions
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message || !currentRoomId) return;
+            
+            socket.emit('chat-message', {
+                roomId: currentRoomId,
+                message: message,
+                userName: currentUserName
+            });
+            
+            chatInput.value = '';
+        }
+        
+        function toggleEmojiMenu() {
+            emojiMenu.classList.toggle('hidden');
+        }
+        
+        // Microphone functions
+        function requestMicPermission() {
+            if (!currentRoomId) {
+                showAlert('Please join a room first', 'error');
+                return;
+            }
+            
+            socket.emit('mic-permission-request', {
+                roomId: currentRoomId,
+                userName: currentUserName
+            });
+        }
+        
+        function toggleSpeaking() {
+            if (!currentRoomId) {
+                showAlert('Please join a room first', 'error');
+                return;
+            }
+            
+            if (!micGranted) {
+                showAlert('Please request microphone permission first', 'warning');
+                return;
+            }
+            
+            isSpeaking = !isSpeaking;
+            socket.emit('user-speaking', {
+                roomId: currentRoomId,
+                userName: currentUserName,
+                speaking: isSpeaking
+            });
+            
+            // Update button UI
+            if (isSpeaking) {
+                toggleSpeakingBtn.textContent = 'Stop Speaking';
+                toggleSpeakingBtn.classList.remove('btn');
+                toggleSpeakingBtn.classList.add('btn-success');
+            } else {
+                toggleSpeakingBtn.textContent = 'Start Speaking';
+                toggleSpeakingBtn.classList.remove('btn-success');
+                toggleSpeakingBtn.classList.add('btn');
+            }
+        }
+        
+        // Socket event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+        
+        socket.on('room-error', (data) => {
+            showAlert(data.message, 'error');
+        });
+        
+        socket.on('room-created', (data) => {
+            console.log('Room created:', data);
+        });
+        
+        socket.on('joined-room', (data) => {
+            console.log('Joined room:', data);
+        });
+        
+        socket.on('chat-history', (messages) => {
+            // Display chat history
+            messagesDiv.innerHTML = '';
+            messages.forEach(msg => {
+                addMessageToDOM(msg, msg.userId === socket.id);
+            });
+        });
+        
+        socket.on('chat-message', (message) => {
+            addMessageToDOM(message, message.userId === socket.id);
+        });
+        
+        socket.on('user-joined', (data) => {
+            updateUserCount(data.count);
+            showAlert(`${data.userId} joined the room`, 'info');
+        });
+        
+        socket.on('user-left', (data) => {
+            updateUserCount(data.count);
+            showAlert(`${data.userId} left the room`, 'info');
+            
+            // Remove from user list
+            const userItem = document.querySelector(`.user-item[data-user-id="${data.userId}"]`);
+            if (userItem) userItem.remove();
+        });
+        
+        socket.on('user-count-update', (data) => {
+            updateUserCount(data.count);
+        });
+        
+        socket.on('mic-permission-granted', (data) => {
+            micGranted = true;
+            showAlert(data.message, 'success');
+            micRequestBtn.disabled = true;
+            micRequestBtn.textContent = 'Mic Granted';
+        });
+        
+        socket.on('user-speaking', (data) => {
+            // Update user indicator in user list
+            const userItem = document.querySelector(`.user-item[data-user-id="${data.userId}"]`);
+            if (userItem) {
+                const statusIndicator = userItem.querySelector('.status-indicator');
+                if (statusIndicator) {
+                    if (data.speaking) {
+                        statusIndicator.className = 'status-indicator status-speaking';
+                    } else {
+                        statusIndicator.className = 'status-indicator status-listening';
+                    }
+                }
+            }
+            
+            // Show speaking notification in chat (optional)
+            if (!data.speaking) {
+                // User stopped speaking
+                // Could add a visual indicator here if desired
+            }
+        });
+        
+        // Helper functions
+        function addMessageToDOM(message, isOwn) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            if (isOwn) messageDiv.classList.add('own');
+            else messageDiv.classList.add('other');
+            
+            const isSelf = message.userId === socket.id;
+            const displayName = message.userName || 'Anonymous';
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <div class="user-info">
+                        <span>${displayName}</span>
+                    </div>
+                    <span>${new Date(message.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div class="message-text">${escapeHtml(message.message)}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function updateUserCount(count) {
+            userCount.textContent = count;
+        }
+        
+        function showAlert(message, type = 'info') {
+            if (!alertContainer) return;
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.classList.add('alert', `alert-${type}`);
+            alertDiv.textContent = message;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            // Remove alert after 3 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+        
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
